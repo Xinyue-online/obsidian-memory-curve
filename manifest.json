@@ -1,0 +1,10 @@
+{
+  "id": "memory-curve",
+  "name": "记忆曲线 Memory Curve",
+  "version": "0.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "计算指定文件夹及子文件夹内每篇 md 的记忆熟练度，提供复习界面、SVG 图表与整体掌握度。不改笔记、不写 frontmatter。",
+  "author": "Xinyue-online",
+  "authorUrl": "https://github.com/Xinyue-online",
+  "isDesktopOnly": true
+}

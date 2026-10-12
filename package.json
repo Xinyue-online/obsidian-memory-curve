@@ -1,0 +1,34 @@
+{
+  "name": "obsidian-memory-curve",
+  "version": "0.1.0",
+  "description": "Obsidian 记忆曲线插件：按文件夹计算笔记熟练度，提供复习界面、SVG 图表与整体掌握度",
+  "private": true,
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Xinyue-online/obsidian-memory-curve.git"
+  },
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "spaced-repetition",
+    "memory-curve",
+    "forgetting-curve"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "deploy": "node scripts/deploy.mjs",
+    "ship": "node esbuild.config.mjs production && node scripts/deploy.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "esbuild": "^0.24.2",
+    "obsidian": "latest",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
