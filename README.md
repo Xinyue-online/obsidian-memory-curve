@@ -25,6 +25,7 @@
 - [项目结构](#项目结构)
 - [测试与验收](#测试与验收)
 - [已知限制](#已知限制)
+- [维护须知](#维护须知)
 - [作者与许可](#作者与许可)
 
 ## 特性
@@ -273,16 +274,16 @@ npm test            # vitest run → Tests 35 passed (35)
 npm run build       # esbuild 打包
 ```
 
-在一座含 **88 篇笔记**的真实库（Obsidian 1.13.7 / Windows）上做过端到端验收，全部通过：
+在一座真实笔记库（Obsidian 1.13.7 / Windows）上做过端到端验收，全部通过：
 
 | # | 验收项 | 结果 |
 | --- | --- | --- |
 | 1 | 侧边栏出现图标、可点开面板 | ✅ ribbon `activity` 常驻，左栏 `[memory-curve-sidebar] 记忆曲线` |
-| 2 | 面板篇数与库内 md 数一致 | ✅ `app.vault.getMarkdownFiles().length = 88`，面板「88 笔记」，88 条记录 |
+| 2 | 面板篇数与库内 md 数一致 | ✅ 面板计数与 `app.vault.getMarkdownFiles().length` 相等，记录条数相同 |
 | 3 | 手算熟练度与插件一致 | ✅ 打 5 分后 `P = 0.5999871694493571`，手算 `R·f = 1 × 0.6 = 0.6`；`due - last = 2.5891386520668314` 天 vs `9 × ln(1/0.75) = 2.5891386520660276` 天（误差 1e-12） |
 | 4 | 点笔记开复习页、只读不可编辑 | ✅ `hasEditor: false`、`contenteditable` 计数 0、Markdown 渲染成功 |
 | 5 | 打分后数据更新、笔记内容与 mtime 不变 | ✅ 磁盘 `times=1 S=9 q=5 hist=1`；笔记 SHA256 与 mtime 前后完全一致 |
-| 6 | 重启 Obsidian 数据还在 | ✅ 退出进程再启动 → 88 条记录、分数/稳定度/历史原样读回 |
+| 6 | 重启 Obsidian 数据还在 | ✅ 退出进程再启动 → 记录条数不变，分数/稳定度/历史原样读回 |
 | 7 | 改名记录跟随、删除记录被清 | ✅ 改名后旧键消失、新键保留 `times/S/history/quality`；删除后内存与磁盘同时清零 |
 | 8 | `npm test` 全绿、`tsc --noEmit` 零错误 | ✅ `Tests 35 passed (35)`；typecheck 零输出 |
 
@@ -302,6 +303,34 @@ npm run build       # esbuild 打包
 - 复习页一次性渲染整篇笔记，超大笔记（实测 280 KB 左右）首次渲染约 1 秒。
 - 已知悉但**不做**：改笔记正文、写 frontmatter、卡片挖空、接入 LLM。
 - 没有做「复习计划」式的长期排程：队列只按到期时间排，不做每天限量。
+
+## 维护须知
+
+### 安全与发布纪律
+
+- `data/`、`main.js`、`*.log` 已在 `.gitignore`。**不要 `git add -f`**：笔记相对路径与评分只留在本机。
+- 提交前看一眼 `git status --short`，确认没有误入的 `data/`、日志、库路径。
+- 仓库里不放密钥、令牌；构建脚本同样不写死库路径，只认 `--vault=` 或 `MEMORY_CURVE_VAULT`。
+- 发 Release 用 `npm run build`（生产构建、无 sourcemap）。`npm run dev` 带 inline sourcemap，只在本机用。
+- 仓库保持 secret scanning 与 push protection 开启；提交身份固定用 `Xinyue-online@users.noreply.github.com`，别混进真实邮箱。
+
+### 数据保留规则
+
+- 全部持久数据只有 `<库>/.obsidian/plugins/memory-curve/data/reviews.json`，备份它一个文件就够。
+- 每条记录要保住的字段：`added`、`last`、`due`、`times`、`lapses`、`stability`、`quality`、`baseline`、`history`。字段名一改，旧记录会被当成缺字段补默认值，历史等于丢。
+- 键是库相对路径、正斜杠。`ReviewStore.prune()` 会清掉不在库里的键——**插件停用期间改名或移动笔记，这段历史就没了**。
+- `load()` 读失败或 JSON 损坏时按空数据继续、不报错。所以「数据突然空了」多半是文件坏了，先找备份。
+- 手工改文件前先退出 Obsidian 或禁用插件，否则运行期内存会在下次打分时覆盖改动。
+- `history` 上限 2000 条；`version` 目前是 `1`，改结构要同时写迁移，别只换字段名。
+
+### 改代码前先看这几条
+
+- 算法全在 `src/model.ts`：纯函数、不碰 Obsidian API。改动必须同步 `tests/model.test.ts`（35 例）。
+- 保持零运行时依赖：图表是手写 SVG，不再引图表库。
+- 日期只用「当地 00:00 的 UTC 日序号」换算，禁止再叠一次时区偏移（曾让日历脚注整体偏一天）。
+- Windows 上 `DataAdapter.rename` 拒绝覆盖已存在文件。写盘必须保留「rename 失败 → 直接写正式文件 + 清临时文件」这条退路。
+- 数据目录按 `manifest.dir` 推断，别写死 `.obsidian/plugins/memory-curve`。
+- 验收口径不变：打分前后笔记正文的 SHA256 与 mtime 必须一致，实测记录见[测试与验收](#测试与验收)。
 
 ## 作者与许可
 
