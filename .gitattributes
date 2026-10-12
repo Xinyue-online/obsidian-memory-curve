@@ -1,0 +1,4 @@
+# 统一按 LF 存放与检出，避免 Windows 上 CRLF/LF 反复变动
+* text=auto eol=lf
+*.png binary
+*.jpg binary
